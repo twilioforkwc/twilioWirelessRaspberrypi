@@ -3,7 +3,6 @@
 '''Twilio Programmable Wireless Command using Raspberry Pi, Twilio Wireless SIM and ABIT AK-020
 '''
 
-import sys
 import time
 import serial
 import re
@@ -13,7 +12,6 @@ LED = 3 # ボード上の3番ピン(GPIO2)
 BTN = 21 # ボード上の21番ピン(GPIO9)
 
 class Board:
-
   # コンストラクタ
   def __init__(self):
     # ピンのモードをそれぞれ出力用と入力用に設定
@@ -67,20 +65,20 @@ class Sms:
     # シリアル通信を閉じる
     self.serial.close()
 
-  # ウェイト
+  # シリアル通信が開放されるまでウェイト
   def wait_response(self):
     time.sleep(1)
     while self.serial.inWaiting() == 0:
       time.sleep(0.5)
 
-  # OK応答の確認
+  # モデムからのOK応答の確認
   def check_response_isok(self):
     self.wait_response()
     r = self.serial.read(self.serial.inWaiting()).split('\r\n')
     if len(r) < 2 or r[-2] != 'OK':
       raise Exception(r)
 
-  # プロンプト応答の確認
+  # モデムからのプロンプト応答の確認
   def check_response_isprompt(self):
     self.wait_response()
     r = self.serial.read(self.serial.inWaiting()).split('\r\n')
@@ -126,18 +124,18 @@ class Sms:
 class MainThread(threading.Thread):
     def __init__(self, n):
         super(MainThread, self).__init__()
-        self.n = n
+        self.n = n  # ループ回数
 
     def run(self):
         print " === start thread === "
         # 指定された回数だけ受信メッセージ取得をループ
         for i in range(self.n):
-            messages = sms.receive_message()
-            for message in messages:
+            messages = sms.receive_message()    # SMSを受信してみる
+            for message in messages:    # 受信メッセージがある場合のみ
                 if message.upper() == 'ON':
-                    board.ledon()
+                    board.ledon()   # LEDを点灯
                 elif message.upper() == 'OFF':
-                    board.ledoff()
+                    board.ledoff()  # LEDを消灯
                 print message
 
             before = 0
@@ -146,11 +144,12 @@ class MainThread(threading.Thread):
               # 押された場合には1、押されていない場合0を返す
               now = GPIO.input(BTN)
               if before == 0 and now == 1:
-                sms.send_message('Push', '2936')
+                sms.send_message('Push', '2936')    # SMSを送信（送信先番号は2936で固定）
                 print("Command sent.")
               time.sleep(0.1)
               before = now
 
+        # ループ終了（終了処理）
         board.ledoff()
         print " === end thread === "
 
